@@ -1,0 +1,26 @@
+{
+  "name": "cgol-widget",
+  "version": "1.0.0",
+  "description": "a conway game of life styled widget",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com:WaterKat/cgol-widget.git"
+  },
+  "keywords": [
+    "streamelements",
+    "widget"
+  ],
+  "author": "WaterKat",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/WaterKat/cgol-widget/issues"
+  },
+  "homepage": "https://github.com/WaterKat/cgol-widget#readme",
+  "devDependencies": {
+    "jsdoc": "^4.0.2"
+  }
+}

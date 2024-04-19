@@ -1,0 +1,29 @@
+# ignore all
+/**/*.*
+
+# allow git files
+!.gitignore
+!LICENSE.md
+!README.md
+
+# allow bun
+!package.json
+!package-lock.json
+!/tsconfig.json
+!/src/**/*.js
+
+# allow tools
+!/tools/*.*
+
+# allow testing
+!/test/*.*
+
+# allow docs
+!/docs/*.*
+
+# ignore again
+/**/node_modules
+/**/out
+/**/build
+/**/*.env
+/**/old.*
