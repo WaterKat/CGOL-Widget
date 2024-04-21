@@ -1,0 +1,38 @@
+{
+    "compilerOptions": {
+      "declaration": false, 
+      "emitDeclarationOnly": false, 
+      "removeComments": false,
+      "strict": true, 
+      "noImplicitAny": true, 
+      "noImplicitReturns": true, 
+      "noFallthroughCasesInSwitch": true,
+      "esModuleInterop": true, 
+      "allowSyntheticDefaultImports": true, 
+      "skipLibCheck": true,
+      "strictNullChecks": true, 
+      "strictFunctionTypes": true, 
+      "strictPropertyInitialization": true, 
+      "strictBindCallApply": true, 
+      "noImplicitThis": true, 
+      "noEmitOnError": false, 
+      "noEmit": true, 
+      "noUnusedParameters": true, 
+      "noUnusedLocals": true, 
+      "allowJs": true, 
+      "checkJs": true, 
+      "declarationMap": false, 
+      "jsx": "react", 
+      "target": "es6", 
+      "module": "commonjs", 
+      "outDir": "./out", 
+      "baseUrl": "./", 
+      "paths": {
+        "*": ["./node_modules/*"]
+      },
+      "typeRoots": ["./node_modules/@types", "./types"] 
+    },
+    "include": ["src/**/*"],
+    "exclude": ["node_modules", "out"] 
+  }
+  

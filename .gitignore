@@ -9,7 +9,7 @@
 # allow bun
 !package.json
 !package-lock.json
-!/tsconfig.json
+!tsconfig.json
 !/src/**/*.js
 
 # allow tools
