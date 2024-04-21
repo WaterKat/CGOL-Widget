@@ -4,7 +4,8 @@
   "description": "a conway game of life styled widget",
   "main": "src/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "serve": "npx http-server ./out",
+    "build": "mkdir -p build; cp src/index.html build/html.txt; cp src/style.css build/css.txt; cp src/index.js build/js.txt; cp src/fields.json build/fields.txt"
   },
   "repository": {
     "type": "git",
@@ -21,6 +22,8 @@
   },
   "homepage": "https://github.com/WaterKat/cgol-widget#readme",
   "devDependencies": {
-    "jsdoc": "^4.0.2"
+    "http-server": "^14.1.1",
+    "jsdoc": "^4.0.2",
+    "typescript": "^5.4.5"
   }
 }
