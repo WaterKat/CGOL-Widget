@@ -1,4 +1,11 @@
-
+/**
+ * The configuration object for the game of life widget.
+ * The width and height are the dimensions of the game of life object.
+ * The cellSize is the size of each cell in the game of life object.
+ * The timeBeforeDecay is the time in seconds before the game of life object
+ * decays.
+ * The frameRate is the frame rate of the game of life object.
+ */
 const config = {
     width: 96,
     height: 53,
@@ -17,7 +24,7 @@ let ctx;
 let gol;
 
 /** @type {Date} */
-let lastGeneration;
+let lastEventTime;
 
 /** @type {boolean} */
 let running = false;
@@ -25,6 +32,12 @@ let running = false;
 /** @type {boolean} */
 let hasInit = false;
 
+/**
+ * The game of life class. This class is responsible for the game of life logic
+ * and the state of the game of life object. It can randomize the game of life
+ * object, step the game of life object and get the current state of the game 
+ * of life object.
+ */
 class GameOfLife {
     #arrays;
     #index;
@@ -173,6 +186,13 @@ class GameOfLife {
     }
 }
 
+/**
+ * The canvas rendering function. It will render the game of life object
+ * and then call itself again after a delay.
+ * If the game of life object is empty or the running flag is set to false
+ * the function will clear the canvas and return.
+ * @returns {Promise<void>}
+ */
 async function Render() {
     if (!ctx) {
         running = false;
@@ -217,7 +237,7 @@ async function Render() {
             config.width * config.cellSize, config.height * config.cellSize
         );
 
-        const dissolve = new Date().getTime() - lastGeneration.getTime()
+        const dissolve = new Date().getTime() - lastEventTime.getTime()
             > config.timeBeforeDecay * 1000;
 
         gol.step(dissolve);
@@ -246,54 +266,62 @@ async function Render() {
  */
 
 /**
- * 
- * @param {*} event 
- * @returns {StreamElementsEvent | undefined}
+ * Verifies that the event is a usable stream elements event.
+ * Usable meaning that this is an event that can be used to trigger
+ * the randomization of the game of life object and the rendering of the canvas
+ * @param {*} potentialEvent The event to verify from stream elements
+ * @returns {StreamElementsEvent | undefined} A valid stream elements event or 
+ * undefined if the event is not usable.
  */
-function VerifyStreamElementsEvent(event) {
-    if (!event ||
-        !event["detail"] || !event["detail"]["event"] ||
-        !event["detail"]["event"]["name"])
+function VerifyStreamElementsEvent(potentialEvent) {
+    if (!potentialEvent ||
+        !potentialEvent["detail"] || !potentialEvent["detail"]["event"] ||
+        !potentialEvent["detail"]["event"]["name"])
         return undefined;
 
-    if (typeof event.detail.event.itemId !== "undefined") {
-        event.detail.listener = "redemption-latest";
+    if (typeof potentialEvent.detail.event.itemId !== "undefined") {
+        potentialEvent.detail.listener = "redemption-latest";
     }
 
     const streamElementEvent = {
-        ...event.detail.event,
-        type: event.detail.listener.toLowerCase().split("-")[0]
+        ...potentialEvent.detail.event,
+        type: potentialEvent.detail.listener.toLowerCase().split("-")[0]
     }
 
     return streamElementEvent;
 }
 
 /**
- * 
- * @param {any} obj 
+ * Handles events received from stream elements.
+ * Resets the last generation and randomizes the game of life object.
+ * Then starts the rendering of the canvas.
+ * @param {*} streamElementsEvent 
  */
-function onEventReceived(obj) {
-    const event = VerifyStreamElementsEvent(obj);
+function onEventReceived(streamElementsEvent) {
+    const event = VerifyStreamElementsEvent(streamElementsEvent);
     if (!event)
         return;
 
-    lastGeneration = new Date();
+    lastEventTime = new Date();
     gol.randomize(0, gol.height - 5, gol.width, gol.height);
     Render();
 }
 
 /**
- * Thiw widgets main function essentially.
- * Grabs the field data and assigns it to some variables. these will be used in
- * the widget.
- * @param {*} obj 
+ * This widgets main function essentially.
+ * Grabs the field data and assigns it the config object. These will be used in
+ * to create the canvas and the game of life object. 
+ * The function also listens for the onEventReceived event to trigger the
+ * randomization of the game of life object and the rendering of the canvas.
+ * @param {*} widgetLoadEvent the stream elements widget load event which
+ * contains the field data.
  */
-function onWidgetLoad(obj) {
+function onWidgetLoad(widgetLoadEvent) {
     if (hasInit)
         return;
     hasInit = true;
 
-    const fieldData = obj.detail.fieldData;
+    const fieldData = widgetLoadEvent.detail.fieldData;
     Object.keys(config).forEach(key => {
         if (fieldData[key]) {
             // @ts-ignore
@@ -312,7 +340,7 @@ function onWidgetLoad(obj) {
     ctx.imageSmoothingEnabled = false;
 
     gol = new GameOfLife(config.width, config.height, false);
-    lastGeneration = new Date();
+    lastEventTime = new Date();
     Render();
 
     window.addEventListener('onEventReceived', onEventReceived);
