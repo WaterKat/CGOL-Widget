@@ -11,7 +11,9 @@ const config = {
     height: 53,
     cellSize: 20,
     timeBeforeDecay: 3,
-    frameRate: 10
+    frameRate: 10,
+    randomizationHeight: 5,
+    pixelColor: "#FFFFFF"
 }
 
 /** @type {HTMLCanvasElement} */
@@ -27,10 +29,13 @@ let gol;
 let lastEventTime;
 
 /** @type {boolean} */
-let running = false;
+let isRendering = false;
 
 /** @type {boolean} */
 let hasInit = false;
+
+/** @type {{r: number, g: number, b: number, a:number}} */
+let pixelColor;
 
 /**
  * The game of life class. This class is responsible for the game of life logic
@@ -91,7 +96,7 @@ class GameOfLife {
 
         for (let j = sy; j < dy; j++) {
             for (let i = sx; i < dx; i++) {
-                const value = Math.random() > 0.75 ? 1 : 0;
+                const value = Math.random() > 0.5 ? 1 : 0;
                 current[j][i] = value;
                 this.#count += value
             }
@@ -187,6 +192,69 @@ class GameOfLife {
 }
 
 /**
+ * Converts a hex color string to an object with the r, g, b, a values.
+ * @param {string} hex the hex color string
+ * @returns {{r: number, g: number, b: number, a: number} | undefined} an 
+ * object with the r, g, b, a values or undefined
+ */
+function hexToRgb(hex) {
+    var result =
+        /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16),
+        a: 255,
+    } : undefined;
+}
+
+/**
+ * Converts an rgba color string to an object with the r, g, b, a values.
+ * @param {string} rgba string representation of the rgba color
+ * @returns {{r: number, g: number, b: number, a: number} | undefined} an
+ * object with the r, g, b, a values or undefined if the string is not a valid
+ */
+function rgbaToRgba(rgba) {
+    if (!rgba.startsWith("rgba(") || !rgba.endsWith(")"))
+        return undefined;
+    const rgbaValues = rgba.slice(5, -1);
+    const rgbaArray = rgbaValues.split(",");
+    try {
+        return {
+            r: +rgbaArray[0],
+            g: +rgbaArray[1],
+            b: +rgbaArray[2],
+            a: +rgbaArray[3] * 255
+        }
+    } catch (e) {
+        return undefined;
+    }
+}
+
+/**
+ * Converts an rgba color string to an object with the r, g, b values.
+ * @param {string} rgb string representation of the rgb color
+ * @returns {{r: number, g: number, b: number, a: number} | undefined} an
+ * object with the r, g, b, a values or undefined if the string is not a valid
+ */
+function rgbToRgba(rgb) {
+    if (!rgb.startsWith("rgb(") || !rgb.endsWith(")"))
+        return undefined;
+    const rgbaValues = rgb.slice(4, -1);
+    const rgbaArray = rgbaValues.split(",");
+    try {
+        return {
+            r: +rgbaArray[0],
+            g: +rgbaArray[1],
+            b: +rgbaArray[2],
+            a: 255
+        }
+    } catch (e) {
+        return undefined;
+    }
+}
+
+/**
  * The canvas rendering function. It will render the game of life object
  * and then call itself again after a delay.
  * If the game of life object is empty or the running flag is set to false
@@ -194,19 +262,19 @@ class GameOfLife {
  * @returns {Promise<void>}
  */
 async function Render() {
-    if (!ctx) {
-        running = false;
+    if (isRendering)
         return;
-    }
+    isRendering = true;
 
-    if (running || gol.count === 0) {
-        running = false;
+    if (gol.count === 0) {
+        isRendering = false;
         ctx.clearRect(
             0, 0,
             config.width * config.cellSize, config.height * config.cellSize
         );
         return;
     }
+
 
     const arr = gol.getArray();
 
@@ -215,11 +283,10 @@ async function Render() {
     for (let y = 0; y < config.height; y++) {
         for (let x = 0; x < config.width; x++) {
             const index = (y * config.width + x) * 4;
-            const color = arr[y][x] === 1 ? 255 : 0;
-            imageData.data[index] = color;
-            imageData.data[index + 1] = color;
-            imageData.data[index + 2] = color;
-            imageData.data[index + 3] = color;
+            imageData.data[index] = pixelColor.r;
+            imageData.data[index + 1] = pixelColor.g;
+            imageData.data[index + 2] = pixelColor.b;
+            imageData.data[index + 3] = pixelColor.a * arr[y][x];
         }
     }
 
@@ -243,11 +310,12 @@ async function Render() {
         gol.step(dissolve);
 
         setTimeout(() => {
+            isRendering = false;
             requestAnimationFrame(Render);
         }, 1000 / config.frameRate);
     } catch (e) {
         console.error(e);
-        running = false;
+        isRendering = false;
     }
 }
 
@@ -303,8 +371,13 @@ function onEventReceived(streamElementsEvent) {
         return;
 
     lastEventTime = new Date();
-    gol.randomize(0, gol.height - 5, gol.width, gol.height);
-    Render();
+    gol.randomize(
+        0, gol.height - config.randomizationHeight,
+        gol.width, gol.height
+    );
+
+    if (!isRendering)
+        Render();
 }
 
 /**
@@ -328,6 +401,18 @@ function onWidgetLoad(widgetLoadEvent) {
             config[key] = fieldData[key];
         }
     });
+
+    pixelColor = { r: 255, g: 255, b: 255, a: 255 };
+    if (config.pixelColor.startsWith("#")) {
+        pixelColor = hexToRgb(config.pixelColor)
+            ?? { r: 255, g: 255, b: 255, a: 255 };
+    } else if (config.pixelColor.startsWith("rgba(")) {
+        pixelColor = rgbaToRgba(config.pixelColor)
+            ?? { r: 255, g: 255, b: 255, a: 255 };
+    } else if (config.pixelColor.startsWith("rgb(")) {
+        pixelColor = rgbToRgba(config.pixelColor)
+            ?? { r: 255, g: 255, b: 255, a: 255 };
+    }
 
     canvas = document.createElement("canvas");
     canvas.width = config.width * config.cellSize;
